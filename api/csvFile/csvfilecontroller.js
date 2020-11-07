@@ -155,19 +155,15 @@ class csvFileController {
             })
         }
     }
-    static async fetchByJobTitle(req,res,next){
-        try{
-            uploadModel.find().select({"Job_Title":1, "_id":0}).then((data)=>{
-                // console.log(data)
-                const count = data.reduce( (tally, job) => {
-                    tally[job] = (tally[job] || 0) + 1 ;
-                    return tally;
-                  } , {})
-                //  console.log(count)
-                 res.status(200).json({
+    static async fetchByJobTitle(req, res, next) {
+        try {
+            uploadModel.aggregate([
+                { "$group": { _id: "$Job_Title", count: { $sum: 1 } } }
+            ]).then((data) => {
+                res.status(200).json({
                     status: "success",
                     message: constants.customMessage.DATA_RETURNED,
-                    response: count
+                    response: data
                 })
             })
         }
