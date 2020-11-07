@@ -157,7 +157,7 @@ class csvFileController {
     }
     static async fetchByJobTitle(req,res,next){
         try{
-            uploadModel.find().select({"Job_Title":1, "_id":0}).limit(80).then((data)=>{
+            uploadModel.find().select({"Job_Title":1, "_id":0}).then((data)=>{
                 // console.log(data)
                 const count = data.reduce( (tally, job) => {
                     tally[job] = (tally[job] || 0) + 1 ;
