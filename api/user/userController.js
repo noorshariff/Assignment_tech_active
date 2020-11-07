@@ -1,72 +1,63 @@
-const { User } = require('./usermodel')
+const User = require('./usermodel')
 
 
 class userController {
     static async registerUser(req, res, next) {
-        const user = new User(req.body);
-        await user.save((err, doc) => {
-            if (err) {
-                return res.status(422).json({ errors: err })
-            } else {
-                const userData = {
-                    firtsName: doc.firstName,
-                    lastName: doc.lastName,
-                    email: doc.email,
-                }
-                return res.status(200).json(
-                    {
-                        success: true,
-                        message: 'Successfully Signed Up',
-                        userData
-                    }
-                )
-            }
-        });
+        // console.log(req.body)
+        // const user = new User(req.body);
+        // await user.save((err, doc) => {
+        //     console.log(doc)
+        //     if (err) {
+        //         return res.status(422).json({ errors: err })
+        //     } else {
+        //         const userData = {
+        //             firtsName: doc.firstName,
+        //             lastName: doc.lastName,
+        //             email: doc.email
+        //         }
+        //         return res.status(200).json(
+        //             {
+        //                 success: true,
+        //                 message: 'Successfully Signed Up',
+        //                 userData
+        //             }
+        //         )
+        //     }
+        // });
+        try {
+            const user = new User(req.body)
+            await user.save()
+            const token = await user.generateAuthToken()
+            res.status(201).send({ user, token })
+        } catch (error) {
+            console.log(error)
+            res.status(400).send(error)
+        }
     }
     static async loginUser(req, res, next) {
-        User.findOne({ 'email': req.body.email }, (err, user) => {
+        try {
+            const { email, password } = req.body
+            const user = await User.findByCredentials(email, password)
             if (!user) {
-                return res.status(404).json({ success: false, message: 'User email not found!' });
-            } else {
-                user.comparePassword(req.body.password, (err, isMatch) => {
-                    console.log(isMatch);
-                    //isMatch is eaither true or false
-                    if (!isMatch) {
-                        return res.status(400).json({ success: false, message: 'Wrong Password!' });
-                    } else {
-                        user.generateToken((err, user) => {
-                            if (err) {
-                                return res.status(400).send({ err });
-                            } else {
-                                const data = {
-                                    userID: user._id,
-                                    firstName: user.firstName,
-                                    lastName: user.lastName,
-                                    email: user.email,
-                                    token: user.token
-                                }
-                                //saving token to cookie
-                                res.cookie('authToken', user.token).status(200).json(
-                                    {
-                                        success: true,
-                                        message: 'Successfully Logged In!',
-                                        userData: data
-                                    })
-                            }
-                        });
-                    }
-                });
+                return res.status(401).send({ error: 'Login failed! Check authentication credentials' })
             }
-        });
+            const token = await user.generateAuthToken()
+            res.send({ user, token })
+        } catch (error) {
+            res.status(400).send(error);
+
+        }
     }
     static async logoutUser(req, res, next) {
-        User.findByIdAndUpdate(
-            { _id: req.user._id }
-            , { token: '' },
-            (err) => {
-                if (err) return res.json({ success: false, err })
-                return res.status(200).send({ success: true, message: 'Successfully Logged Out!' });
+        try {
+            req.user.tokens = req.user.tokens.filter((token) => {
+                return token.token != req.token
             })
+            await req.user.save()
+            res.send()
+        } catch (error) {
+            res.status(500).send(error)
+        }
     }
 }
 

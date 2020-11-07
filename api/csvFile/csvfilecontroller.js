@@ -163,7 +163,7 @@ class csvFileController {
                     tally[job] = (tally[job] || 0) + 1 ;
                     return tally;
                   } , {})
-                 console.log(count)
+                //  console.log(count)
                  res.status(200).json({
                     status: "success",
                     message: constants.customMessage.DATA_RETURNED,
